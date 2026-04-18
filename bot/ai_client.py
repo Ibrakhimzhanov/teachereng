@@ -1,14 +1,16 @@
 import asyncio
 import logging
 from pydantic import BaseModel, Field
-from google import genai
-from google.genai import types
+from openai import AsyncOpenAI
 
 
 log = logging.getLogger(__name__)
 
-MODEL = "gemini-flash-lite-latest"
+OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
+DEFAULT_MODEL = "google/gemini-3.1-flash-lite"
 
+# OpenRouter pricing for Gemini 3.1 Flash Lite, USD per 1M tokens.
+# Update when OpenRouter pricing changes.
 PRICE_INPUT_PER_1M = 0.25
 PRICE_OUTPUT_PER_1M = 1.50
 
@@ -30,6 +32,8 @@ eslatib qo'ying: "Maqsadli so'zni gapga kiriting".
 to'g'ri ma'noni ko'rsating.
 - explanation_uz FAQAT O'ZBEK tilida. Xato bo'lmasa — bo'sh string.
 - corrected maydonida har doim to'g'ri ingliz gapni bering (xato bo'lmasa — originalni qaytaring).
+
+JAVOB FAQAT JSON formatida bo'ladi (is_correct, used_target_word, corrected, explanation_uz).
 """
 
 
@@ -40,9 +44,34 @@ class CheckResult(BaseModel):
     explanation_uz: str = Field(description="Explanation of the error in Uzbek (2-3 sentences). Empty string if no errors.")
 
 
+_JSON_SCHEMA = {
+    "name": "check_result",
+    "strict": True,
+    "schema": {
+        "type": "object",
+        "properties": {
+            "is_correct": {"type": "boolean"},
+            "used_target_word": {"type": "boolean"},
+            "corrected": {"type": "string"},
+            "explanation_uz": {"type": "string"},
+        },
+        "required": ["is_correct", "used_target_word", "corrected", "explanation_uz"],
+        "additionalProperties": False,
+    },
+}
+
+
 class GeminiClient:
-    def __init__(self, api_key: str):
-        self._client = genai.Client(api_key=api_key)
+    def __init__(self, api_key: str, model: str = DEFAULT_MODEL):
+        self._model = model
+        self._client = AsyncOpenAI(
+            base_url=OPENROUTER_BASE_URL,
+            api_key=api_key,
+            default_headers={
+                "HTTP-Referer": "https://github.com/Ibrakhimzhanov/teachereng",
+                "X-Title": "teachereng",
+            },
+        )
 
     async def check_sentence(self, word: str, sentence: str) -> tuple[CheckResult, float]:
         user_msg = f"Maqsadli so'z: {word}\nTalaba gapi: {sentence}"
@@ -50,32 +79,37 @@ class GeminiClient:
         last_err: Exception | None = None
         for attempt in range(3):
             try:
-                resp = await self._client.aio.models.generate_content(
-                    model=MODEL,
-                    contents=user_msg,
-                    config=types.GenerateContentConfig(
-                        system_instruction=SYSTEM_PROMPT,
-                        temperature=0.2,
-                        max_output_tokens=400,
-                        response_mime_type="application/json",
-                        response_schema=CheckResult,
-                    ),
+                resp = await self._client.chat.completions.create(
+                    model=self._model,
+                    messages=[
+                        {"role": "system", "content": SYSTEM_PROMPT},
+                        {"role": "user", "content": user_msg},
+                    ],
+                    response_format={
+                        "type": "json_schema",
+                        "json_schema": _JSON_SCHEMA,
+                    },
+                    temperature=0.2,
+                    max_tokens=400,
                 )
-                cost = self._calc_cost(resp.usage_metadata)
-                parsed = resp.parsed
-                if parsed is None:
-                    raise RuntimeError("Gemini returned no parsed result")
+                content = resp.choices[0].message.content
+                if not content:
+                    raise RuntimeError("OpenRouter returned empty content")
+                parsed = CheckResult.model_validate_json(content)
+                cost = self._calc_cost(resp.usage)
                 return parsed, cost
             except Exception as e:
                 last_err = e
-                log.warning("Gemini attempt %d failed: %s", attempt + 1, e)
+                log.warning("OpenRouter attempt %d failed: %s", attempt + 1, e)
                 if attempt < 2:
                     await asyncio.sleep(2 ** (attempt + 1))
 
-        raise RuntimeError(f"Gemini failed after 3 attempts: {last_err}")
+        raise RuntimeError(f"OpenRouter failed after 3 attempts: {last_err}")
 
     @staticmethod
     def _calc_cost(usage) -> float:
-        inp = (usage.prompt_token_count / 1_000_000) * PRICE_INPUT_PER_1M
-        out = (usage.candidates_token_count / 1_000_000) * PRICE_OUTPUT_PER_1M
+        if usage is None:
+            return 0.0
+        inp = (usage.prompt_tokens / 1_000_000) * PRICE_INPUT_PER_1M
+        out = (usage.completion_tokens / 1_000_000) * PRICE_OUTPUT_PER_1M
         return round(inp + out, 6)

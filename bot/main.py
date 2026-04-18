@@ -30,7 +30,7 @@ async def main() -> None:
     storage = Storage(cfg.db_path)
     storage.init_db()
 
-    ai_client = GeminiClient(api_key=cfg.gemini_api_key)
+    ai_client = GeminiClient(api_key=cfg.openrouter_api_key, model=cfg.ai_model)
     bot = Bot(token=cfg.tg_bot_token)
 
     async def send_reply(chat_id: int, reply_to: int, text: str) -> int | None:

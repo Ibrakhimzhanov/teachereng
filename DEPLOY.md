@@ -20,7 +20,7 @@ pip install -r requirements.txt
 
 cp .env.example .env
 nano .env
-# Fill in: TG_BOT_TOKEN, GEMINI_API_KEY, CHANNEL_ID, DISCUSSION_GROUP_ID, TEACHER_TG_ID
+# Fill in: TG_BOT_TOKEN, OPENROUTER_API_KEY, CHANNEL_ID, DISCUSSION_GROUP_ID, TEACHER_TG_ID
 
 cp systemd/teachereng.service /etc/systemd/system/
 systemctl daemon-reload
@@ -59,7 +59,7 @@ sqlite3 /opt/teachereng/data.db 'SELECT word, COUNT(*) FROM posts GROUP BY word'
    - The **discussion group** linked to the channel (to read comments and reply).
 4. Get `CHANNEL_ID` and `DISCUSSION_GROUP_ID`: forward one message from each to [@userinfobot](https://t.me/userinfobot), or use `getUpdates` API.
 5. Get `TEACHER_TG_ID`: the teacher messages [@userinfobot](https://t.me/userinfobot) and copies the numeric ID.
-6. Get `GEMINI_API_KEY`: [Google AI Studio](https://aistudio.google.com/app/apikey).
+6. Get `OPENROUTER_API_KEY`: [OpenRouter → Keys](https://openrouter.ai/settings/keys). Top up credits at [OpenRouter → Credits](https://openrouter.ai/credits) — $5 is enough for thousands of comments.
 
 ## Acceptance test (run after first deploy)
 
@@ -91,4 +91,5 @@ sqlite3 /opt/teachereng/data.db 'SELECT word, COUNT(*) FROM posts GROUP BY word'
 | Bot not reacting to comments | Is the bot an admin in the **discussion group** (not the channel)? Is privacy disabled in BotFather? |
 | `RuntimeError: Missing required env var` | `.env` not loaded — check `EnvironmentFile` path in systemd unit |
 | No weekly report on Sunday | Check `journalctl -u teachereng | grep scheduler`, verify `TZ=Asia/Tashkent` |
-| AI returns errors | `journalctl -u teachereng | grep Gemini`, verify `GEMINI_API_KEY` is valid |
+| AI returns errors | `journalctl -u teachereng | grep OpenRouter`, verify `OPENROUTER_API_KEY` is valid and credits are funded |
+| Want to try a different model | Set `AI_MODEL=anthropic/claude-haiku-4.5` in `.env` and restart — no code change needed |

@@ -9,7 +9,8 @@ class Config:
     channel_id: int
     discussion_group_id: int
     teacher_tg_id: int
-    gemini_api_key: str
+    openrouter_api_key: str
+    ai_model: str
     db_path: str
     tz: str
     log_level: str
@@ -29,7 +30,8 @@ class Config:
             channel_id=int(req("CHANNEL_ID")),
             discussion_group_id=int(req("DISCUSSION_GROUP_ID")),
             teacher_tg_id=int(req("TEACHER_TG_ID")),
-            gemini_api_key=req("GEMINI_API_KEY"),
+            openrouter_api_key=req("OPENROUTER_API_KEY"),
+            ai_model=os.environ.get("AI_MODEL") or "google/gemini-3.1-flash-lite",
             db_path=os.environ.get("DB_PATH") or "data.db",
             tz=os.environ.get("TZ") or "Asia/Tashkent",
             log_level=os.environ.get("LOG_LEVEL") or "INFO",
