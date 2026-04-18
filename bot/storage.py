@@ -81,3 +81,62 @@ class Storage:
             "SELECT word FROM posts WHERE post_id=?", (post_id,)
         ).fetchone()
         return row[0] if row else None
+
+    def save_checked_comment(
+        self,
+        *,
+        comment_id: int,
+        discussion_group_id: int,
+        post_id: int,
+        user_id: int,
+        username: str | None,
+        user_sentence: str,
+        is_correct: bool,
+        used_target_word: bool,
+        corrected: str,
+        explanation_uz: str,
+        bot_reply_id: int | None,
+        checked_at: int,
+        ai_cost_usd: float,
+    ) -> bool:
+        cur = self._connect().execute(
+            """INSERT OR IGNORE INTO checked_comments
+               (comment_id, discussion_group_id, post_id, user_id, username,
+                user_sentence, is_correct, used_target_word, corrected,
+                explanation_uz, bot_reply_id, checked_at, ai_cost_usd)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (comment_id, discussion_group_id, post_id, user_id, username,
+             user_sentence, int(is_correct), int(used_target_word), corrected,
+             explanation_uz, bot_reply_id, checked_at, ai_cost_usd),
+        )
+        return cur.rowcount > 0
+
+    def was_comment_checked(self, comment_id: int) -> bool:
+        row = self._connect().execute(
+            "SELECT 1 FROM checked_comments WHERE comment_id=?", (comment_id,)
+        ).fetchone()
+        return row is not None
+
+    def stats_since(self, since_ts: int) -> dict:
+        conn = self._connect()
+        total = conn.execute(
+            "SELECT COUNT(*) FROM checked_comments WHERE checked_at>=?",
+            (since_ts,),
+        ).fetchone()[0]
+        correct = conn.execute(
+            "SELECT COUNT(*) FROM checked_comments WHERE checked_at>=? AND is_correct=1",
+            (since_ts,),
+        ).fetchone()[0]
+        top_words = conn.execute(
+            """SELECT p.word, COUNT(*) as cnt
+               FROM checked_comments c JOIN posts p ON c.post_id = p.post_id
+               WHERE c.checked_at>=?
+               GROUP BY p.word ORDER BY cnt DESC LIMIT 3""",
+            (since_ts,),
+        ).fetchall()
+        return {
+            "total": total,
+            "correct": correct,
+            "incorrect": total - correct,
+            "top_words": [(w, c) for w, c in top_words],
+        }

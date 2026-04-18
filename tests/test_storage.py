@@ -52,3 +52,60 @@ def test_save_post_is_idempotent(storage):
     storage.save_post(1, -100111, "despite", 1000)
     storage.save_post(1, -100111, "despite", 1000)
     assert storage.get_word_for_post(1) == "despite"
+
+
+def test_save_checked_comment_and_query(storage):
+    storage.save_post(10, -100111, "leverage", 1000)
+    storage.save_checked_comment(
+        comment_id=500,
+        discussion_group_id=-100222,
+        post_id=10,
+        user_id=777,
+        username="alice",
+        user_sentence="I leverage my time.",
+        is_correct=True,
+        used_target_word=True,
+        corrected="I leverage my time.",
+        explanation_uz="",
+        bot_reply_id=501,
+        checked_at=1500,
+        ai_cost_usd=0.0003,
+    )
+
+    assert storage.was_comment_checked(500) is True
+    assert storage.was_comment_checked(999) is False
+
+
+def test_insert_or_ignore_dedups_comments(storage):
+    storage.save_post(10, -100111, "leverage", 1000)
+    first = storage.save_checked_comment(
+        comment_id=500, discussion_group_id=-100222, post_id=10,
+        user_id=777, username="a", user_sentence="x", is_correct=True,
+        used_target_word=True, corrected="x", explanation_uz="",
+        bot_reply_id=None, checked_at=1500, ai_cost_usd=0.0,
+    )
+    second = storage.save_checked_comment(
+        comment_id=500, discussion_group_id=-100222, post_id=10,
+        user_id=777, username="a", user_sentence="x", is_correct=True,
+        used_target_word=True, corrected="x", explanation_uz="",
+        bot_reply_id=None, checked_at=1500, ai_cost_usd=0.0,
+    )
+    assert first is True
+    assert second is False
+
+
+def test_stats_last_n_days(storage):
+    storage.save_post(10, -100111, "leverage", 1000)
+    now = 1_700_000_000
+    for i in range(5):
+        storage.save_checked_comment(
+            comment_id=1000 + i, discussion_group_id=-100222, post_id=10,
+            user_id=777, username="u", user_sentence="s", is_correct=(i % 2 == 0),
+            used_target_word=True, corrected="s", explanation_uz="",
+            bot_reply_id=None, checked_at=now - i * 3600, ai_cost_usd=0.0003,
+        )
+    stats = storage.stats_since(now - 86400 * 7)
+    assert stats["total"] == 5
+    assert stats["correct"] == 3
+    assert stats["incorrect"] == 2
+    assert stats["top_words"][0] == ("leverage", 5)
