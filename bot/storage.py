@@ -69,3 +69,15 @@ class Storage:
         if self._conn is not None:
             self._conn.close()
             self._conn = None
+
+    def save_post(self, post_id: int, channel_id: int, word: str, posted_at: int) -> None:
+        self._connect().execute(
+            "INSERT OR REPLACE INTO posts (post_id, channel_id, word, posted_at) VALUES (?, ?, ?, ?)",
+            (post_id, channel_id, word.lower(), posted_at),
+        )
+
+    def get_word_for_post(self, post_id: int) -> str | None:
+        row = self._connect().execute(
+            "SELECT word FROM posts WHERE post_id=?", (post_id,)
+        ).fetchone()
+        return row[0] if row else None
