@@ -48,7 +48,7 @@ async def test_check_sentence_calls_openrouter_with_right_params():
         assert cost > 0
 
         call_kwargs = instance.chat.completions.create.await_args.kwargs
-        assert call_kwargs["model"] == "google/gemini-3.1-flash-lite"
+        assert call_kwargs["model"] == "google/gemini-3.1-flash-lite-preview"
         # user message contains the target word and the sentence
         user_msg = call_kwargs["messages"][1]["content"]
         assert "leverage" in user_msg

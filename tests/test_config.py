@@ -20,7 +20,7 @@ def test_config_loads_from_env(monkeypatch):
     assert cfg.discussion_group_id == -100222
     assert cfg.teacher_tg_id == 333
     assert cfg.openrouter_api_key == "sk-or-test"
-    assert cfg.ai_model == "google/gemini-3.1-flash-lite"
+    assert cfg.ai_model == "google/gemini-3.1-flash-lite-preview"
     assert cfg.db_path == "data.db"
     assert cfg.tz == "Asia/Tashkent"
 

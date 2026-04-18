@@ -7,7 +7,7 @@ from openai import AsyncOpenAI
 log = logging.getLogger(__name__)
 
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
-DEFAULT_MODEL = "google/gemini-3.1-flash-lite"
+DEFAULT_MODEL = "google/gemini-3.1-flash-lite-preview"
 
 # OpenRouter pricing for Gemini 3.1 Flash Lite, USD per 1M tokens.
 # Update when OpenRouter pricing changes.
