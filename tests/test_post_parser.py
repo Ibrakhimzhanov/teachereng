@@ -17,12 +17,21 @@ def test_returns_none_when_no_hashtag():
     assert extract_word(None) is None
 
 
-def test_ignores_hashtag_without_prefix():
-    assert extract_word("#leverage") is None
-    assert extract_word("#random") is None
+def test_single_simple_hashtag_is_target_word():
+    assert extract_word("#Leverage\n\nUshbu so'zga gap tuzing") == "leverage"
+    assert extract_word("#despite") == "despite"
 
 
-def test_first_hashtag_wins():
+def test_multiple_simple_hashtags_ambiguous():
+    # 2+ hashtags without #word_ prefix -> can't tell which is target
+    assert extract_word("#english #learning #vocabulary") is None
+
+
+def test_strict_wins_over_simple():
+    assert extract_word("#word_first some text #random") == "first"
+
+
+def test_first_hashtag_wins_when_strict():
     text = "#word_first some text #word_second"
     assert extract_word(text) == "first"
 
