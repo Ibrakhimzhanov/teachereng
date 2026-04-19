@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import random
 from pydantic import BaseModel, Field
 from openai import AsyncOpenAI
 
@@ -49,17 +50,22 @@ C) IS_CORRECT = TRUE (gap to'g'ri, so'z ishlatilgan):
 
    ✅ "talaba gapi qo'shtirnoq ichida"
 
-   Qisqa iliq izoh — 1 jumla, har safar boshqacha so'zlar bilan.
+   Qisqa izoh — 1 jumla.
 
-   Izoh ohangi uchun (AYNI jumlalarni takrorlamang, variant qiling):
-   • "So'z o'rnida ishlatilgan, gap ravon."
-   • "Aniq va tushunarli."
-   • "Grammatika sof, ma'no bir tekis."
-   • "Fe'l, ot va urg'u — mos keldi."
-   • "Bu shakl — to'g'ri, esda qolsin."
-   • "Qisqa va lo'nda — yaxshi tanlov."
-   • "Fikringiz aniq, tuzilishi puxta."
-   Har javob FARQ QILADI. Ketma-ket bir xil gapni chiqarmang.
+   IZOHI HAR SAFAR YANGI FIKR bilan bo'ladi. Oldingi talaba uchun nima yozgan \
+bo'lsangiz — shuni TAKRORLAMANG. Har safar boshqacha rakursdan maqtang:
+   - so'zning o'rinli ishlatilishi
+   - fe'l-ot kelishuvi
+   - gap ohangi / uslub
+   - so'z aniqligi
+   - fikrning lo'ndaligi
+   - gap ravonligi
+   - foydali misol qo'shing
+   - so'zning boshqa konteksti haqida eslatma
+   - kelgusiga tavsiya
+   Bir xil shablon jumlalarni qaytarmang ("Fikringiz aniq, tuzilishi puxta." \
+yoki "Grammatika sof, ma'no bir tekis." kabilar — TAQIQLANADI). Haqiqiy \
+ustoz kabi har bir talabaga BOSHQA ko'z bilan qarang.
 
 D) IS_CORRECT = FALSE (grammatik xato yoki so'z noto'g'ri ma'noda):
    Uchta bo'lak (bo'sh qator bilan):
@@ -128,6 +134,22 @@ _JSON_SCHEMA = {
 }
 
 
+_STYLE_ANGLES = [
+    "So'zning o'rinliligi haqida bir fikr bildiring.",
+    "Gapning ravonligi va ohangiga e'tibor qarating.",
+    "Fe'l-ot kelishuvining mosligini ta'kidlang.",
+    "Fikr aniqligi va qisqaligini ta'kidlang.",
+    "Yordamchi misol yoki qo'shimcha kontekst tavsiya eting.",
+    "Bu so'zning boshqa ma'nolariga ishora qiling (qisqa).",
+    "Gap uslubi (rasmiy/norasmiy) haqida bir so'z.",
+    "Kelasi darsga nima o'rganilsa yaxshi bo'lar edi — qisqa tavsiya.",
+    "So'zni boshqa kontekstda qanday ishlatish mumkinligini eslating.",
+    "Gapning semantik aniqligi haqida ikki og'iz so'z.",
+    "Bu yerda nima yaxshi chiqqanini aniq ko'rsating.",
+    "Bu so'zni ishlatishning afzalligini ayting.",
+]
+
+
 class GeminiClient:
     def __init__(self, api_key: str, model: str = DEFAULT_MODEL):
         self._model = model
@@ -141,7 +163,12 @@ class GeminiClient:
         )
 
     async def check_sentence(self, word: str, sentence: str) -> tuple[CheckResult, float]:
-        user_msg = f"Maqsadli so'z: {word}\nTalaba gapi: {sentence}"
+        style_hint = random.choice(_STYLE_ANGLES)
+        user_msg = (
+            f"Maqsadli so'z: {word}\n"
+            f"Talaba gapi: {sentence}\n\n"
+            f"Style hint (izohda boshqacharoq chiqish uchun): {style_hint}"
+        )
 
         last_err: Exception | None = None
         for attempt in range(3):
