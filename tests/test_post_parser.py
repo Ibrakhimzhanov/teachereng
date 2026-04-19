@@ -39,3 +39,18 @@ def test_first_hashtag_wins_when_strict():
 def test_only_latin_letters():
     assert extract_word("#word_leverage123") == "leverage"
     assert extract_word("#word_") is None
+
+
+def test_phrasal_verb_with_underscores():
+    assert extract_word("#word_look_up") == "look up"
+    assert extract_word("#word_give_up_on") == "give up on"
+    assert extract_word("#word_run_out_of") == "run out of"
+
+
+def test_simple_phrasal_hashtag():
+    assert extract_word("#give_up\n\nMake a sentence using this phrase") == "give up"
+    assert extract_word("#Look_Up") == "look up"
+
+
+def test_underscores_stripped():
+    assert extract_word("#word__leverage__") == "leverage"
