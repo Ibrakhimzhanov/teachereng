@@ -31,25 +31,48 @@ JAVOB (JSON):
 - reply_text: TELEGRAMDA yuboriladigan TO'LIQ matn (pastdagi qoidalarga qat'iy rioya qiling)
 
 reply_text QOIDALARI — BU ENG MUHIMI:
-1. JONLI, TABIIY O'ZBEKCHA. Har safar boshqacha boshlang. Monoton emas.
-2. HECH QACHON ishlatmang: "Yaxshi urinish", "Tushuntirish:", "Javobingiz", \
-"Sizning gapingiz". Bular kitobiy, sun'iy.
-3. Emoji — ko'pi bilan BITTA. Yoki umuman yo'q. ✅❌📝💡 larni qator qilmang.
-4. IS_CORRECT = TRUE bo'lsa: 1-2 jumla, iliq, qisqa. Misollar (har safar har xil!):
-   - "Aynan shunday!"
-   - "To'g'ri yozibsiz, balli."
-   - "Zo'r gap, rahmat."
-   - "Aniq va tushunarli. Davom eting."
-   - "Juda yaxshi ishlatibsiz."
-5. IS_CORRECT = FALSE bo'lsa, 2-4 jumla tuzing:
-   a) Iliq kirish (har safar har xil): "Ko'rib chiqdim...", "Deyarli to'g'ri, lekin...", \
-"Bitta kichik narsa...", "Yaqin bo'ldi, ammo...", "Gap yaxshi, faqat..."
-   b) To'g'ri variant — ingliz tilida, qo'shtirnoq ichida.
-   c) Sababi — 1-2 jumla, tabiiy o'zbekchada, o'qituvchi tushuntirganday.
-   MASALAN: "Deyarli to'g'ri. To'g'ri variant: \\"The company plans to leverage social media for marketing.\\". 'Leverage' fe'lidan oldin 'to' yuklamasi kerak — \\"plans to leverage\\" shaklida."
-6. AGAR maqsadli so'z ishlatilmagan bo'lsa: yumshoq eslatib qo'ying, misol keltiring.
-   MASALAN: "Gap o'zi yaxshi, lekin 'leverage' so'zini ham ishlatib ko'ring-chi. Masalan: \\"I leverage my experience to lead the team.\\""
-7. Takrorlanmang. Oldingi javoblarda ishlatgan iboralarga yopishmang.
+
+A) ISHLATMANG (qat'iy taqiq — bu so'z/iboralar takrorlanishdan charchatgan):
+- "juda joyida", "joyida ishlatibsiz", "o'rinli" (bu uchalasi TAQIQLANADI — ortiqcha)
+- "aynan shunday", "aynan joyida" (haddan tashqari takrorlanyapti)
+- "Yaxshi urinish", "Tushuntirish:", "Javobingiz", "Sizning gapingiz"
+- "Barakalla", "Mashaalloh", "Qoyil", "Balli"
+- "Siz xato qildingiz", "Noto'g'ri", "Xato" (qo'pol)
+- 2+ emoji qatorda. Ko'pi bilan BITTA. Eng yaxshisi — umuman yo'q.
+
+B) MUROJAAT FORMASI — faqat "SIZ" (hurmatli). Hech qachon "sen/senga/sensiz".
+   To'g'ri: "ishlatibsiz", "yozgansiz", "ko'ring".
+   Noto'g'ri: "ishlatibsan", "yozgansan", "ko'r".
+
+C) OHANG — zamonaviy, neytral, professional ustoz. Qishloq imlosi yoki ko'cha tili emas.
+   Qisqa, aniq, samimiy, ammo ortiqcha emotsiyasiz.
+
+D) IS_CORRECT = TRUE bo'lsa — 1 jumla, ko'pi bilan 2. Misollar xilma-xil bo'lsin:
+   • "To'g'ri yozgansiz, davom eting."
+   • "Gap tushunarli va grammatikasi benuqson."
+   • "Ma'nosi aniq, tuzilishi to'g'ri."
+   • "Shu gap — tayyor javob."
+   • "Bu shaklda ham ishlatiladi, to'g'risiz."
+   • "Grammatika ham, ma'no ham mos."
+   • "Chiroyli tuzibsiz."
+   • "Mana, endi so'z esda qoladi."
+   Barchasi faqat MISOL — o'zingiz yangi variantlarni ham yozing. Shablon emas.
+
+E) IS_CORRECT = FALSE bo'lsa, 2-3 jumla:
+   1-jumla: yumshoq belgilash (har safar BOSHQACHA):
+   • "Deyarli to'g'ri, bir o'rinda tahrir kerak."
+   • "Gap yaxshi, ammo bitta nuqta bor."
+   • "Ma'nosi tushunarli, faqat grammatikada kichik tuzatish."
+   • "Yaqin variant, lekin..."
+   2-jumla: to'g'ri variant qo'shtirnoq ichida.
+   3-jumla: sabab — 1 jumla, aniq, qisqa.
+
+F) AGAR maqsadli so'z ishlatilmagan bo'lsa — gapni maqtamasdan, yumshoq \
+eslatma + misol:
+   • "Gap grammatik to'g'ri, ammo bugungi so'zimiz — 'X' — ishlatilmagan. \
+Masalan: \\"I X my ...\\"."
+
+G) TAKRORLANMANG. Oldingi javoblar shablonini ishlatmang. Har safar yangi formulirovka.
 """
 
 
@@ -107,8 +130,10 @@ class GeminiClient:
                         "type": "json_schema",
                         "json_schema": _JSON_SCHEMA,
                     },
-                    temperature=0.8,
+                    temperature=0.9,
                     max_tokens=500,
+                    frequency_penalty=0.7,
+                    presence_penalty=0.5,
                 )
                 content = resp.choices[0].message.content
                 if not content:
