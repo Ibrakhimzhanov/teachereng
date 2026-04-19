@@ -41,6 +41,19 @@ async def main() -> None:
 
     router = Router()
 
+    # Catch-all: log every update at the dispatcher entry.
+    @router.update.outer_middleware()
+    async def log_all_updates(handler, event, data):
+        try:
+            log.info("RAW_UPDATE kind=%s", type(event.model_dump(exclude_none=True)).__name__)
+            dump = event.model_dump(exclude_none=True)
+            # shallow top-level keys tell us what kind of update
+            keys = [k for k in dump.keys() if k != "update_id"]
+            log.info("RAW_UPDATE update_id=%s keys=%s", dump.get("update_id"), keys)
+        except Exception as e:
+            log.warning("RAW_UPDATE logging failed: %s", e)
+        return await handler(event, data)
+
     @router.channel_post()
     async def on_channel_post(msg: Message):
         await handle_channel_post(msg, storage)
@@ -72,8 +85,15 @@ async def main() -> None:
     scheduler.start()
 
     log.info("Bot starting (polling)...")
+    # Explicitly request every relevant update type so auto-detection doesn't
+    # accidentally drop something (channel_post, edited channel_post, my_chat_member).
+    allowed = [
+        "message", "edited_message",
+        "channel_post", "edited_channel_post",
+        "my_chat_member", "chat_member",
+    ]
     try:
-        await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
+        await dp.start_polling(bot, allowed_updates=allowed)
     finally:
         scheduler.shutdown()
         await bot.session.close()
