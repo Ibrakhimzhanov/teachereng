@@ -30,6 +30,19 @@ def test_empty_string_not_english():
     assert is_probably_english("   ") is False
 
 
+def test_english_contractions_are_english():
+    # Regression: "I'm", "don't", "it's" — apostrophes in English must NOT trip Uzbek detector.
+    assert is_probably_english("I'm leveraging my knowledge to useful activities.") is True
+    assert is_probably_english("Don't give up on your dreams.") is True
+    assert is_probably_english("It's a great day to learn English.") is True
+    assert is_probably_english("John's book is on the table.") is True
+
+
+def test_uzbek_apostrophe_pattern_detected():
+    assert is_probably_english("o'qituvchi ingliz tilini o'rgatadi") is False
+    assert is_probably_english("og'ir vaziyat") is False
+
+
 @pytest.fixture
 def checker_env():
     with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:

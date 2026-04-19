@@ -43,21 +43,30 @@ def _tokens(text: str) -> list[str]:
     return re.findall(r"[a-zA-Z']+", text.lower())
 
 
+# Uzbek-specific: "o'" or "g'" (as in so'z, o'qituvchi, og'ir, yo'q).
+# Matches all common apostrophe variants (ASCII ', curly ', Unicode modifier letters).
+# Does NOT match English contractions like "I'm", "don't", "John's".
+_UZBEK_APOSTROPHE_RE = re.compile(
+    r"[og][\u0027\u2019\u2018\u02bc\u02bb\u0060]",
+    re.IGNORECASE,
+)
+
+
 def is_probably_english(text: str) -> bool:
     if not text or not text.strip():
+        return False
+
+    if _UZBEK_APOSTROPHE_RE.search(text):
         return False
 
     tokens = _tokens(text)
     if not tokens:
         return False
 
-    has_uzbek_apostrophe = any("'" in tok for tok in tokens)
-    has_uzbek_word = any(tok in _UZBEK_MARKERS for tok in tokens)
-    if has_uzbek_apostrophe or has_uzbek_word:
+    if any(tok in _UZBEK_MARKERS for tok in tokens):
         return False
 
-    has_english_marker = any(tok in _ENGLISH_MARKERS for tok in tokens)
-    if has_english_marker:
+    if any(tok in _ENGLISH_MARKERS for tok in tokens):
         return True
 
     letters = [c for c in text if c.isalpha()]
