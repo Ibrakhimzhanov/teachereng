@@ -41,19 +41,6 @@ async def main() -> None:
 
     router = Router()
 
-    # Catch-all: log every update at the dispatcher entry.
-    @router.update.outer_middleware()
-    async def log_all_updates(handler, event, data):
-        try:
-            log.info("RAW_UPDATE kind=%s", type(event.model_dump(exclude_none=True)).__name__)
-            dump = event.model_dump(exclude_none=True)
-            # shallow top-level keys tell us what kind of update
-            keys = [k for k in dump.keys() if k != "update_id"]
-            log.info("RAW_UPDATE update_id=%s keys=%s", dump.get("update_id"), keys)
-        except Exception as e:
-            log.warning("RAW_UPDATE logging failed: %s", e)
-        return await handler(event, data)
-
     @router.channel_post()
     async def on_channel_post(msg: Message):
         await handle_channel_post(msg, storage)
@@ -66,8 +53,37 @@ async def main() -> None:
     async def on_stats(msg: Message):
         await handle_stats_command(msg, storage, cfg.teacher_tg_id)
 
+    # Fallback catch-all — last-resort logger for any message that didn't match above.
+    @router.message()
+    async def on_any_message(msg: Message):
+        log.info(
+            "ANY_MESSAGE chat_id=%s chat_type=%s from_id=%s text=%r",
+            msg.chat.id, msg.chat.type,
+            getattr(msg.from_user, "id", None),
+            (msg.text or msg.caption or "")[:120],
+        )
+
+    @router.my_chat_member()
+    async def on_my_chat_member(event):
+        log.info(
+            "MY_CHAT_MEMBER chat_id=%s type=%s new_status=%s",
+            event.chat.id, event.chat.type,
+            getattr(event.new_chat_member, "status", None),
+        )
+
     dp = Dispatcher()
     dp.include_router(router)
+
+    # Outer middleware on the DISPATCHER (not router) — logs every raw update
+    @dp.update.outer_middleware()
+    async def log_raw(handler, event, data):
+        try:
+            dump = event.model_dump(exclude_none=True)
+            keys = sorted(k for k in dump.keys() if k != "update_id")
+            log.info("RAW_UPDATE id=%s keys=%s", dump.get("update_id"), keys)
+        except Exception as e:
+            log.warning("RAW_UPDATE log failed: %s", e)
+        return await handler(event, data)
 
     scheduler = AsyncIOScheduler(timezone=cfg.tz)
 
