@@ -78,7 +78,15 @@ E) AGAR maqsadli so'z umuman ishlatilmagan (is_correct=false, used_target_word=f
 
    ✅ Masalan: "I X my time to study English."
 
-F) TIL — faqat O'ZBEK. 💡 bo'lagi zinhor inglizcha emas.
+F) TIL — faqat O'ZBEK lotin alifbosi. Bu MUHIM:
+   - ZINHOR TURK tilini aralashtirmang. Turkcha so'zlar va harflar (ü, ö, ç, ı, ğ)
+     mutlaqo ishlatilmaydi. "Cümle", "cümlangiz", "cümleniz", "doğru", "yanlış"
+     kabi turkcha so'zlar — TAQIQLANGAN.
+   - O'zbekchada "gap" yoki "jumla" deyiladi. Turkchada "cümle". Hech qachon "cümle" emas.
+   - "Sizning gapingiz" yoki "Gap" — TO'G'RI. "Cümlangiz" — NOTO'G'RI (bu turkcha).
+   - O'zbek alifbosidagi o'ziga xos belgilar: o' (o-apostrof), g' (g-apostrof), \
+sh, ch, ng. Ularni to'g'ri yozing.
+   - 💡 bo'lagi zinhor inglizcha emas, faqat o'zbekcha.
    MUROJAAT — faqat "SIZ" (hurmatli): ishlatibsiz, yozgansiz, ko'ring.
    "Sen/senga" ni ishlatmang.
 
