@@ -10,15 +10,16 @@ def test_check_result_schema():
         used_target_word=True,
         corrected="I leverage my English skills.",
         explanation_uz="'leveraging' noto'g'ri — 'can' dan keyin infinitiv keladi.",
+        reply_text="Deyarli to'g'ri. To'g'ri variant: \"I leverage my English skills.\". Gapda 'can' dan keyin fe'lning oddiy shakli kelishi kerak.",
     )
     assert r.is_correct is False
     assert r.used_target_word is True
     assert r.corrected.startswith("I leverage")
-    assert "noto'g'ri" in r.explanation_uz
+    assert "Deyarli" in r.reply_text
 
 
 def test_check_result_json_roundtrip():
-    r = CheckResult(is_correct=True, used_target_word=True, corrected="x", explanation_uz="")
+    r = CheckResult(is_correct=True, used_target_word=True, corrected="x", explanation_uz="", reply_text="Zo'r!")
     data = r.model_dump()
     r2 = CheckResult(**data)
     assert r2 == r
@@ -29,7 +30,8 @@ async def test_check_sentence_calls_openrouter_with_right_params():
     fake_choice = MagicMock()
     fake_choice.message.content = (
         '{"is_correct": true, "used_target_word": true, '
-        '"corrected": "I leverage my time.", "explanation_uz": ""}'
+        '"corrected": "I leverage my time.", "explanation_uz": "", '
+        '"reply_text": "Aynan shunday, balli!"}'
     )
     fake_response = MagicMock()
     fake_response.choices = [fake_choice]
@@ -61,7 +63,7 @@ async def test_check_sentence_calls_openrouter_with_right_params():
 async def test_custom_model_passed_through():
     fake_choice = MagicMock()
     fake_choice.message.content = (
-        '{"is_correct": true, "used_target_word": true, "corrected": "x", "explanation_uz": ""}'
+        '{"is_correct": true, "used_target_word": true, "corrected": "x", "explanation_uz": "", "reply_text": "Zo\'r."}'
     )
     fake_response = MagicMock()
     fake_response.choices = [fake_choice]

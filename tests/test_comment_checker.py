@@ -41,7 +41,8 @@ def checker_env():
     ai = MagicMock()
     ai.check_sentence = AsyncMock(return_value=(
         CheckResult(is_correct=True, used_target_word=True,
-                    corrected="I leverage my time.", explanation_uz=""),
+                    corrected="I leverage my time.", explanation_uz="",
+                    reply_text="Aynan shunday, balli!"),
         0.0003,
     ))
 
